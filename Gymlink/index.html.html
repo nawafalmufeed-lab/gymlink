@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymLink - منصة ربط النوادي الرياضية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #E63946;
+            --primary-dark: #C62F3B;
+            --secondary: #457B9D;
+            --secondary-light: #A8DADC;
+            --dark: #1D3557;
+            --light: #F1FAEE;
+            --text: #2B2D42;
+            --text-light: #8D99AE;
+            --success: #06D6A0;
+            --warning: #FFB703;
+            --gradient-start: #E63946;
+            --gradient-end: #C62F3B;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #F1FAEE 0%, #E8F4F8 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+
+        /* Navigation */
+        .nav {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 78px;
+            z-index: 999;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0;
+            padding: 0;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 1rem;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(230, 57, 70, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-btn:hover::before {
+            left: 100%;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: linear-gradient(180deg, rgba(230, 57, 70, 0.05) 0%, white 100%);
+        }
+
+        .nav-btn span {
+            font-size: 1.3rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .search-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.2rem 3.5rem 1.2rem 1.5rem;
+            border: 2px solid #E8E8E8;
+            border-radius: 15px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
+        }
+
+        .search-btn:active {
+            transform: translateY(-50%) scale(0.98);
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .filter-select {
+            padding: 0.9rem 1rem;
+            border: 2px solid #E8E8E8;
+            border-radius: 10px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            background: white;
+        }
+
+        /* Gym Cards */
+        .gyms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .gym-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .gym-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s ease;
+        }
+
+        .gym-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+
+        .gym-card:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .gym-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .gym-card:hover .gym-image {
+            transform: scale(1.1);
+        }
+
+        .gym-image-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gym-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .gym-content {
+            padding: 1.5rem;
+        }
+
+        .gym-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .gym-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .gym-distance {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .gym-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: linear-gradient(135deg, #FFC107, #FF9800);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .gym-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-tag {
+            background: linear-gradient(135deg, #E8F4F8, #D0EBF3);
+            color: var(--secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .gym-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 2px solid #F5F5F5;
+        }
+
+        .gym-price {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .price-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .price-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .book-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.9rem 1.8rem;
+            border-radius: 12px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .book-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(230, 57, 70, 0.4);
+        }
+
+        .book-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Booking Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 25px;
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #F0F0F0;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: #F5F5F5;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+        }
+
+        .close-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .booking-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .date-option {
+            padding: 1rem;
+            border: 2px solid #E8E8E8;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+        }
+
+        .date-option:hover {
+            border-color: var(--secondary);
+            background: #F0F8FA;
+        }
+
+        .date-option.selected {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .date-day {
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .date-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .time-option {
+            padding: 1rem;
+            border: 2px solid #E8E8E8;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            background: #FAFAFA;
+        }
+
+        .time-option:hover {
+            border-color: var(--secondary);
+            background: #F0F8FA;
+        }
+
+        .time-option.selected {
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 15px rgba(69, 123, 157, 0.3);
+        }
+
+        .time-option.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .subscription-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .subscription-option {
+            padding: 1.5rem;
+            border: 2px solid #E8E8E8;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: #FAFAFA;
+        }
+
+        .subscription-option:hover {
+            border-color: var(--secondary);
+            background: #F0F8FA;
+        }
+
+        .subscription-option.selected {
+            background: linear-gradient(135deg, rgba(230, 57, 70, 0.1), rgba(230, 57, 70, 0.05));
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.15);
+        }
+
+        .subscription-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .subscription-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .booking-summary {
+            background: linear-gradient(135deg, #F8F9FA, #E8EEF2);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #DDD;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .summary-label {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .total-row {
+            font-size: 1.2rem;
+        }
+
+        .total-row .summary-value {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .confirm-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--success), #05B891);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 15px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 25px rgba(6, 214, 160, 0.3);
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 35px rgba(6, 214, 160, 0.4);
+        }
+
+        .confirm-btn:active {
+            transform: translateY(0);
+        }
+
+        .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* My Bookings Tab */
+        .bookings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+            align-items: center;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .booking-card:hover {
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+            transform: translateX(-5px);
+        }
+
+        .booking-info h3 {
+            font-size: 1.4rem;
+            color: var(--dark);
+            margin-bottom: 0.8rem;
+        }
+
+        .booking-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .booking-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .booking-detail span:first-child {
+            font-weight: 600;
+        }
+
+        .booking-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            min-width: 200px;
+        }
+
+        .status-badge {
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-confirmed {
+            background: linear-gradient(135deg, var(--success), #05B891);
+            color: white;
+        }
+
+        .status-upcoming {
+            background: linear-gradient(135deg, var(--warning), #F59E0B);
+            color: white;
+        }
+
+        .status-past {
+            background: #E8E8E8;
+            color: var(--text-light);
+        }
+
+        .qr-btn, .cancel-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .qr-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+            color: white;
+        }
+
+        .qr-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .cancel-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .cancel-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* QR Code Display */
+        .qr-display {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .qr-code {
+            width: 250px;
+            height: 250px;
+            background: white;
+            border: 10px solid var(--primary);
+            border-radius: 20px;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            box-shadow: 0 10px 40px rgba(230, 57, 70, 0.2);
+        }
+
+        .qr-instructions {
+            background: linear-gradient(135deg, #F8F9FA, #E8EEF2);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+            text-align: right;
+        }
+
+        .qr-instructions h3 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .qr-instructions ol {
+            text-align: right;
+            padding-right: 1.5rem;
+        }
+
+        .qr-instructions li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-light);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .gyms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-card {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-actions {
+                min-width: auto;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .subscription-types {
+                grid-template-columns: 1fr;
+            }
+
+            .date-grid, .time-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            #map {
+                height: 400px !important;
+            }
+
+            .map-sidebar {
+                width: 100% !important;
+                position: relative !important;
+                height: auto !important;
+            }
+
+            .map-container {
+                flex-direction: column !important;
+            }
+        }
+
+        /* Map Styles */
+        .map-view-toggle {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .view-toggle-btn {
+            flex: 1;
+            padding: 0.8rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .view-toggle-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .view-toggle-btn:hover:not(.active) {
+            background: rgba(230, 57, 70, 0.1);
+            color: var(--primary);
+        }
+
+        .map-container {
+            display: flex;
+            gap: 1.5rem;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            height: 600px;
+        }
+
+        #map {
+            flex: 1;
+            height: 600px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .map-sidebar {
+            width: 380px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: #FAFAFA;
+        }
+
+        .map-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .map-sidebar::-webkit-scrollbar-track {
+            background: #F0F0F0;
+            border-radius: 10px;
+        }
+
+        .map-sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .map-gym-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .map-gym-card:hover {
+            border-color: var(--primary);
+            transform: translateX(-5px);
+            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.15);
+        }
+
+        .map-gym-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 6px 25px rgba(230, 57, 70, 0.25);
+        }
+
+        .map-gym-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.8rem;
+        }
+
+        .map-gym-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .map-gym-distance {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .map-gym-rating {
+            background: linear-gradient(135deg, #FFC107, #FF9800);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .map-gym-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .map-gym-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .map-feature-tag {
+            background: #E8F4F8;
+            color: var(--secondary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .map-book-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.7rem;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .map-book-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        .location-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid #DDD;
+            border-radius: 10px;
+            padding: 0.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .location-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .location-btn.active {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        /* Custom Leaflet Popup */
+        .leaflet-popup-content-wrapper {
+            border-radius: 15px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            min-width: 250px;
+        }
+
+        .popup-content {
+            padding: 1rem;
+        }
+
+        .popup-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .popup-info {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        .popup-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .popup-book-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.7rem;
+            border-radius: 8px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .popup-book-btn:hover {
+            opacity: 0.9;
+        }
+
+        .distance-info {
+            background: linear-gradient(135deg, rgba(69, 123, 157, 0.1), rgba(168, 218, 220, 0.1));
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .distance-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        .distance-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Map Legend */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .icon-available {
+            background: var(--success);
+        }
+
+        .icon-busy {
+            background: var(--warning);
+        }
+
+        .icon-you {
+            background: var(--primary);
+        }
+
+        /* Success Animation */
+        .success-animation {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--success), #05B891);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+            margin: 0 auto 2rem;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-message {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        .success-details {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">💪</div>
+                <h1>GymLink</h1>
+            </div>
+            <div class="user-info">
+                <div>
+                    <div style="font-weight: 600;">أحمد محمد</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">ahmed@example.com</div>
+                </div>
+                <div class="user-avatar">أ</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <button class="nav-btn active" onclick="showTab('explore')">
+                <span>🔍</span> استكشاف النوادي
+            </button>
+            <button class="nav-btn" onclick="showTab('bookings')">
+                <span>📅</span> حجوزاتي
+            </button>
+            <button class="nav-btn" onclick="showTab('favorites')">
+                <span>❤️</span> المفضلة
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Explore Tab -->
+        <div id="explore-tab" class="tab-content">
+            <!-- View Toggle -->
+            <div class="map-view-toggle">
+                <button class="view-toggle-btn active" onclick="switchView('grid')">
+                    <span>📱</span> عرض الشبكة
+                </button>
+                <button class="view-toggle-btn" onclick="switchView('map')">
+                    <span>🗺️</span> عرض الخريطة
+                </button>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="search-header">
+                    <div class="search-icon">📍</div>
+                    <h2>ابحث عن أقرب نادي</h2>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="ابحث عن نادي أو منطقة..." id="searchInput">
+                    <button class="search-btn" onclick="searchGyms()">بحث</button>
+                </div>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <label class="filter-label">المنطقة</label>
+                        <select class="filter-select" id="areaFilter" onchange="filterGyms()">
+                            <option value="">جميع المناطق</option>
+                            <option value="الرياض">الرياض</option>
+                            <option value="جدة">جدة</option>
+                            <option value="الدمام">الدمام</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">نوع النادي</label>
+                        <select class="filter-select" id="typeFilter" onchange="filterGyms()">
+                            <option value="">جميع الأنواع</option>
+                            <option value="رجال">رجال فقط</option>
+                            <option value="نساء">نساء فقط</option>
+                            <option value="عائلي">عائلي</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">السعر</label>
+                        <select class="filter-select" id="priceFilter" onchange="filterGyms()">
+                            <option value="">جميع الأسعار</option>
+                            <option value="low">أقل من 50 ريال</option>
+                            <option value="medium">50 - 100 ريال</option>
+                            <option value="high">أكثر من 100 ريال</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div id="grid-view">
+                <!-- Gyms Grid -->
+                <div class="gyms-grid" id="gymsGrid"></div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>جاري تحميل النوادي...</p>
+                </div>
+            </div>
+
+            <!-- Map View -->
+            <div id="map-view" style="display: none;">
+                <div class="map-container">
+                    <div id="map">
+                        <button class="location-btn" onclick="locateUser()" title="موقعي الحالي">
+                            📍
+                        </button>
+                        <div class="map-legend">
+                            <div class="legend-title">دليل الخريطة</div>
+                            <div class="legend-item">
+                                <div class="legend-icon icon-you"></div>
+                                <span>موقعك الحالي</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon icon-available"></div>
+                                <span>نوادي متاحة</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon icon-busy"></div>
+                                <span>نوادي مزدحمة</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-sidebar" id="mapSidebar">
+                        <div class="distance-info">
+                            <div class="distance-value" id="nearestDistance">-</div>
+                            <div class="distance-label">أقرب نادي منك</div>
+                        </div>
+                        <div id="mapGymsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div id="bookings-tab" class="tab-content" style="display: none;">
+            <div class="bookings-list" id="bookingsList"></div>
+        </div>
+
+        <!-- Favorites Tab -->
+        <div id="favorites-tab" class="tab-content" style="display: none;">
+            <div class="empty-state">
+                <div class="empty-icon">❤️</div>
+                <h3>لا توجد نوادي مفضلة</h3>
+                <p>ابدأ بإضافة نوادي إلى قائمة المفضلة</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalGymName">حجز النادي</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div id="bookingForm">
+                <!-- Subscription Type -->
+                <div class="booking-section">
+                    <h3 class="section-title">
+                        <span>📋</span>
+                        نوع الاشتراك
+                    </h3>
+                    <div class="subscription-types">
+                        <div class="subscription-option selected" onclick="selectSubscription('daily', 80)">
+                            <div class="subscription-title">يومي</div>
+                            <div class="subscription-price">80 ريال</div>
+                        </div>
+                        <div class="subscription-option" onclick="selectSubscription('weekly', 450)">
+                            <div class="subscription-title">أسبوعي</div>
+                            <div class="subscription-price">450 ريال</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="booking-section">
+                    <h3 class="section-title">
+                        <span>📅</span>
+                        اختر التاريخ
+                    </h3>
+                    <div class="date-grid" id="dateGrid"></div>
+                </div>
+
+                <!-- Time Selection -->
+                <div class="booking-section">
+                    <h3 class="section-title">
+                        <span>⏰</span>
+                        اختر الوقت
+                    </h3>
+                    <div class="time-grid" id="timeGrid"></div>
+                </div>
+
+                <!-- Summary -->
+                <div class="booking-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">النادي:</span>
+                        <span class="summary-value" id="summaryGym">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">نوع الاشتراك:</span>
+                        <span class="summary-value" id="summaryType">يومي</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">التاريخ:</span>
+                        <span class="summary-value" id="summaryDate">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">الوقت:</span>
+                        <span class="summary-value" id="summaryTime">-</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span class="summary-label">المجموع:</span>
+                        <span class="summary-value" id="summaryTotal">80 ريال</span>
+                    </div>
+                </div>
+
+                <button class="confirm-btn" onclick="confirmBooking()" id="confirmBtn" disabled>
+                    تأكيد الحجز والدفع
+                </button>
+            </div>
+
+            <div id="successView" style="display: none;">
+                <div class="success-animation">
+                    <div class="success-icon">✓</div>
+                    <h2 class="success-message">تم الحجز بنجاح!</h2>
+                    <p class="success-details">تم إرسال تأكيد الحجز إلى بريدك الإلكتروني</p>
+                    <button class="confirm-btn" onclick="closeModal()">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">رمز QR للدخول</h2>
+                <button class="close-btn" onclick="closeQRModal()">×</button>
+            </div>
+            <div class="qr-display">
+                <div class="qr-code">
+                    <canvas id="qrCanvas"></canvas>
+                </div>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">
+                    رقم الحجز: <strong id="bookingNumber">-</strong>
+                </p>
+                <div class="qr-instructions">
+                    <h3>تعليمات الاستخدام:</h3>
+                    <ol>
+                        <li>اذهب إلى النادي في الموعد المحدد</li>
+                        <li>اعرض رمز QR على موظف الاستقبال</li>
+                        <li>سيتم مسح الكود والتحقق من حجزك</li>
+                        <li>استمتع بتمرينك!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample Data
+        const gymsData = [
+            {
+                id: 1,
+                name: "نادي فيتنس بلس",
+                area: "الرياض",
+                district: "العليا",
+                distance: 2.3,
+                rating: 4.8,
+                reviews: 245,
+                lat: 24.7136,
+                lng: 46.6753,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23457B9D' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E🏋️ Fitness Plus%3C/text%3E%3C/svg%3E",
+                features: ["أوزان حرة", "أجهزة كارديو", "مسبح", "ساونا"],
+                type: "عائلي",
+                dailyPrice: 80,
+                weeklyPrice: 450,
+                available: true,
+                openTime: "6:00 صباحاً - 11:00 مساءً"
+            },
+            {
+                id: 2,
+                name: "نادي باور جيم",
+                area: "الرياض",
+                district: "الملقا",
+                distance: 3.7,
+                rating: 4.6,
+                reviews: 189,
+                lat: 24.7534,
+                lng: 46.6428,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23E63946' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E💪 Power Gym%3C/text%3E%3C/svg%3E",
+                features: ["أوزان حرة", "كروس فيت", "استشارات تغذية"],
+                type: "رجال",
+                dailyPrice: 60,
+                weeklyPrice: 350,
+                available: true,
+                openTime: "5:00 صباحاً - 12:00 منتصف الليل"
+            },
+            {
+                id: 3,
+                name: "نادي ليدي فيت",
+                area: "الرياض",
+                district: "الورود",
+                distance: 1.8,
+                rating: 4.9,
+                reviews: 312,
+                lat: 24.7305,
+                lng: 46.6927,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23A8DADC' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E🧘 Lady Fit%3C/text%3E%3C/svg%3E",
+                features: ["يوجا", "بيلاتس", "زومبا", "حضانة أطفال"],
+                type: "نساء",
+                dailyPrice: 70,
+                weeklyPrice: 400,
+                available: true,
+                openTime: "7:00 صباحاً - 10:00 مساءً"
+            },
+            {
+                id: 4,
+                name: "نادي أتليتك زون",
+                area: "الرياض",
+                district: "الياسمين",
+                distance: 4.2,
+                rating: 4.7,
+                reviews: 178,
+                lat: 24.6877,
+                lng: 46.7219,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%231D3557' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E⚡ Athletic Zone%3C/text%3E%3C/svg%3E",
+                features: ["كارديو", "أوزان", "ملاكمة", "مدرب شخصي"],
+                type: "عائلي",
+                dailyPrice: 90,
+                weeklyPrice: 500,
+                available: true,
+                openTime: "6:00 صباحاً - 11:30 مساءً"
+            },
+            {
+                id: 5,
+                name: "نادي إيليت فيتنس",
+                area: "الرياض",
+                district: "النرجس",
+                distance: 5.1,
+                rating: 4.5,
+                reviews: 156,
+                lat: 24.7736,
+                lng: 46.6165,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%2306D6A0' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E🏆 Elite Fitness%3C/text%3E%3C/svg%3E",
+                features: ["أوزان حرة", "مسبح أولمبي", "سبا", "مقهى صحي"],
+                type: "عائلي",
+                dailyPrice: 120,
+                weeklyPrice: 650,
+                available: true,
+                openTime: "5:30 صباحاً - 11:00 مساءً"
+            },
+            {
+                id: 6,
+                name: "نادي سترونج بودي",
+                area: "الرياض",
+                district: "الربوة",
+                distance: 3.3,
+                rating: 4.4,
+                reviews: 134,
+                lat: 24.7242,
+                lng: 46.7431,
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23FFB703' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='40' font-weight='bold' font-family='Arial'%3E🔥 Strong Body%3C/text%3E%3C/svg%3E",
+                features: ["بناء أجسام", "كروس فيت", "TRX"],
+                type: "رجال",
+                dailyPrice: 65,
+                weeklyPrice: 380,
+                available: true,
+                openTime: "6:00 صباحاً - 11:00 مساءً"
+            }
+        ];
+
+        let bookings = [
+            {
+                id: 1001,
+                gymId: 1,
+                gymName: "نادي فيتنس بلس",
+                date: "2026-02-10",
+                time: "08:00 صباحاً",
+                type: "يومي",
+                price: 80,
+                status: "confirmed",
+                qrCode: "GYMLINK-1001-2026"
+            },
+            {
+                id: 1002,
+                gymId: 3,
+                gymName: "نادي ليدي فيت",
+                date: "2026-02-12",
+                time: "06:00 مساءً",
+                type: "أسبوعي",
+                price: 400,
+                status: "upcoming",
+                qrCode: "GYMLINK-1002-2026"
+            }
+        ];
+
+        let currentGym = null;
+        let selectedDate = null;
+        let selectedTime = null;
+        let selectedSubscription = { type: 'daily', price: 80 };
+        let map = null;
+        let markers = [];
+        let userMarker = null;
+        let userLocation = { lat: 24.7136, lng: 46.6753 }; // Default: Riyadh center
+
+        // Initialize
+        window.onload = function() {
+            displayGyms(gymsData);
+            displayBookings();
+            generateDates();
+            generateTimes();
+            getUserLocation();
+        };
+
+        // Get User Location
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        updateDistances();
+                    },
+                    error => {
+                        console.log('Location access denied, using default location');
+                    }
+                );
+            }
+        }
+
+        // Calculate Distance between two points (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Update gym distances based on user location
+        function updateDistances() {
+            gymsData.forEach(gym => {
+                gym.distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    gym.lat,
+                    gym.lng
+                ).toFixed(1);
+            });
+            
+            // Sort by distance
+            gymsData.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            
+            // Update displays
+            displayGyms(gymsData);
+            if (map) {
+                updateMapSidebar(gymsData);
+            }
+        }
+
+        // Switch between grid and map view
+        function switchView(view) {
+            const gridView = document.getElementById('grid-view');
+            const mapView = document.getElementById('map-view');
+            const buttons = document.querySelectorAll('.view-toggle-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (view === 'grid') {
+                gridView.style.display = 'block';
+                mapView.style.display = 'none';
+            } else {
+                gridView.style.display = 'none';
+                mapView.style.display = 'block';
+                
+                // Initialize map if not already done
+                if (!map) {
+                    initMap();
+                }
+            }
+        }
+
+        // Initialize Leaflet Map
+        function initMap() {
+            // Create map centered on user location
+            map = L.map('map').setView([userLocation.lat, userLocation.lng], 13);
+            
+            // Add tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // Add user location marker
+            const userIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background: #E63946; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4); font-size: 20px;">📍</div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+            
+            userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+                .addTo(map)
+                .bindPopup('<div class="popup-content"><strong>موقعك الحالي</strong></div>');
+            
+            // Add gym markers
+            addGymMarkers(gymsData);
+            
+            // Update sidebar
+            updateMapSidebar(gymsData);
+        }
+
+        // Add gym markers to map
+        function addGymMarkers(gyms) {
+            // Clear existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
+            
+            gyms.forEach(gym => {
+                const gymIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background: #06D6A0; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4); font-size: 18px; cursor: pointer;">💪</div>`,
+                    iconSize: [35, 35],
+                    iconAnchor: [17.5, 17.5]
+                });
+                
+                const marker = L.marker([gym.lat, gym.lng], { icon: gymIcon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="popup-content">
+                            <div class="popup-header">${gym.name}</div>
+                            <div class="popup-info">📍 ${gym.district} • ${gym.distance} كم</div>
+                            <div class="popup-info">⭐ ${gym.rating} (${gym.reviews} تقييم)</div>
+                            <div class="popup-price">${gym.dailyPrice} ريال/يوم</div>
+                            <button class="popup-book-btn" onclick="openBookingModal(${gym.id})">احجز الآن</button>
+                        </div>
+                    `);
+                
+                // Add click event to highlight in sidebar
+                marker.on('click', function() {
+                    highlightGymInSidebar(gym.id);
+                });
+                
+                markers.push(marker);
+            });
+        }
+
+        // Update map sidebar with gym list
+        function updateMapSidebar(gyms) {
+            const sidebar = document.getElementById('mapGymsList');
+            const nearestDistance = document.getElementById('nearestDistance');
+            
+            if (gyms.length > 0) {
+                nearestDistance.textContent = gyms[0].distance + ' كم';
+            }
+            
+            sidebar.innerHTML = gyms.map(gym => `
+                <div class="map-gym-card" id="gym-card-${gym.id}" onclick="focusOnGym(${gym.id})">
+                    <div class="map-gym-header">
+                        <div>
+                            <div class="map-gym-name">${gym.name}</div>
+                            <div class="map-gym-distance">📍 ${gym.district} • ${gym.distance} كم</div>
+                        </div>
+                        <div class="map-gym-rating">⭐ ${gym.rating}</div>
+                    </div>
+                    <div class="map-gym-price">${gym.dailyPrice} ريال/يوم</div>
+                    <div class="map-gym-features">
+                        ${gym.features.slice(0, 3).map(f => `<span class="map-feature-tag">${f}</span>`).join('')}
+                    </div>
+                    <button class="map-book-btn" onclick="event.stopPropagation(); openBookingModal(${gym.id})">
+                        احجز الآن
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Focus on gym in map
+        function focusOnGym(gymId) {
+            const gym = gymsData.find(g => g.id === gymId);
+            if (!gym || !map) return;
+            
+            // Pan to gym location
+            map.setView([gym.lat, gym.lng], 15, {
+                animate: true,
+                duration: 1
+            });
+            
+            // Open popup for the gym marker
+            const markerIndex = gymsData.findIndex(g => g.id === gymId);
+            if (markerIndex !== -1 && markers[markerIndex]) {
+                markers[markerIndex].openPopup();
+            }
+            
+            // Highlight in sidebar
+            highlightGymInSidebar(gymId);
+        }
+
+        // Highlight gym card in sidebar
+        function highlightGymInSidebar(gymId) {
+            document.querySelectorAll('.map-gym-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            const card = document.getElementById(`gym-card-${gymId}`);
+            if (card) {
+                card.classList.add('active');
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Locate user on map
+        function locateUser() {
+            const btn = document.querySelector('.location-btn');
+            btn.classList.add('active');
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Update user marker
+                        if (userMarker) {
+                            userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+                        }
+                        
+                        // Pan to user location
+                        map.setView([userLocation.lat, userLocation.lng], 14, {
+                            animate: true,
+                            duration: 1.5
+                        });
+                        
+                        // Update distances
+                        updateDistances();
+                        
+                        setTimeout(() => {
+                            btn.classList.remove('active');
+                        }, 2000);
+                    },
+                    error => {
+                        alert('لا يمكن الوصول إلى موقعك. يرجى التحقق من إعدادات الموقع.');
+                        btn.classList.remove('active');
+                    }
+                );
+            } else {
+                alert('متصفحك لا يدعم خدمات تحديد الموقع');
+                btn.classList.remove('active');
+            }
+        }
+
+        // Display Gyms
+        function displayGyms(gyms) {
+            const grid = document.getElementById('gymsGrid');
+            if (gyms.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><h3>لم يتم العثور على نوادي</h3><p>جرب تغيير معايير البحث</p></div>';
+                return;
+            }
+
+            grid.innerHTML = gyms.map(gym => `
+                <div class="gym-card" onclick="openBookingModal(${gym.id})">
+                    <div class="gym-image-container">
+                        <img src="${gym.image}" alt="${gym.name}" class="gym-image">
+                        ${gym.available ? '<div class="gym-badge">متاح الآن</div>' : ''}
+                    </div>
+                    <div class="gym-content">
+                        <div class="gym-header">
+                            <div>
+                                <h3 class="gym-name">${gym.name}</h3>
+                                <div class="gym-distance">📍 ${gym.district} • ${gym.distance} كم</div>
+                            </div>
+                            <div class="gym-rating">⭐ ${gym.rating}</div>
+                        </div>
+                        <div class="gym-features">
+                            ${gym.features.map(f => `<span class="feature-tag">✓ ${f}</span>`).join('')}
+                        </div>
+                        <div class="gym-footer">
+                            <div class="gym-price">
+                                <span class="price-label">من</span>
+                                <span class="price-value">${gym.dailyPrice} ريال/يوم</span>
+                            </div>
+                            <button class="book-btn" onclick="event.stopPropagation(); openBookingModal(${gym.id})">
+                                احجز الآن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter Gyms
+        function filterGyms() {
+            const area = document.getElementById('areaFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const price = document.getElementById('priceFilter').value;
+
+            let filtered = gymsData.filter(gym => {
+                if (area && gym.area !== area) return false;
+                if (type && gym.type !== type) return false;
+                if (price) {
+                    if (price === 'low' && gym.dailyPrice >= 50) return false;
+                    if (price === 'medium' && (gym.dailyPrice < 50 || gym.dailyPrice > 100)) return false;
+                    if (price === 'high' && gym.dailyPrice <= 100) return false;
+                }
+                return true;
+            });
+
+            displayGyms(filtered);
+        }
+
+        // Search Gyms
+        function searchGyms() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = gymsData.filter(gym => 
+                gym.name.toLowerCase().includes(query) ||
+                gym.district.toLowerCase().includes(query) ||
+                gym.features.some(f => f.toLowerCase().includes(query))
+            );
+            displayGyms(filtered);
+        }
+
+        // Generate Dates
+        function generateDates() {
+            const dateGrid = document.getElementById('dateGrid');
+            const dates = [];
+            const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                dates.push({
+                    date: date,
+                    day: days[date.getDay()],
+                    number: date.getDate(),
+                    value: date.toISOString().split('T')[0]
+                });
+            }
+
+            dateGrid.innerHTML = dates.map((d, i) => `
+                <div class="date-option ${i === 0 ? 'selected' : ''}" onclick="selectDate('${d.value}', this)">
+                    <div class="date-day">${d.day}</div>
+                    <div class="date-number">${d.number}</div>
+                </div>
+            `).join('');
+
+            selectedDate = dates[0].value;
+        }
+
+        // Generate Times
+        function generateTimes() {
+            const timeGrid = document.getElementById('timeGrid');
+            const times = [
+                '06:00 صباحاً', '08:00 صباحاً', '10:00 صباحاً',
+                '12:00 ظهراً', '02:00 مساءً', '04:00 مساءً',
+                '06:00 مساءً', '08:00 مساءً', '10:00 مساءً'
+            ];
+
+            timeGrid.innerHTML = times.map(t => `
+                <div class="time-option" onclick="selectTime('${t}', this)">${t}</div>
+            `).join('');
+        }
+
+        // Select Date
+        function selectDate(date, element) {
+            document.querySelectorAll('.date-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedDate = date;
+            updateSummary();
+        }
+
+        // Select Time
+        function selectTime(time, element) {
+            document.querySelectorAll('.time-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedTime = time;
+            updateSummary();
+        }
+
+        // Select Subscription
+        function selectSubscription(type, price) {
+            document.querySelectorAll('.subscription-option').forEach(el => el.classList.remove('selected'));
+            event.target.closest('.subscription-option').classList.add('selected');
+            selectedSubscription = { type, price };
+            document.getElementById('summaryType').textContent = type === 'daily' ? 'يومي' : 'أسبوعي';
+            document.getElementById('summaryTotal').textContent = price + ' ريال';
+        }
+
+        // Update Summary
+        function updateSummary() {
+            if (selectedDate) {
+                const date = new Date(selectedDate);
+                document.getElementById('summaryDate').textContent = date.toLocaleDateString('ar-SA');
+            }
+            if (selectedTime) {
+                document.getElementById('summaryTime').textContent = selectedTime;
+            }
+            
+            const btn = document.getElementById('confirmBtn');
+            if (selectedDate && selectedTime) {
+                btn.disabled = false;
+            }
+        }
+
+        // Open Booking Modal
+        function openBookingModal(gymId) {
+            currentGym = gymsData.find(g => g.id === gymId);
+            document.getElementById('modalGymName').textContent = 'حجز - ' + currentGym.name;
+            document.getElementById('summaryGym').textContent = currentGym.name;
+            document.getElementById('bookingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Reset form
+            document.getElementById('bookingForm').style.display = 'block';
+            document.getElementById('successView').style.display = 'none';
+            generateDates();
+            generateTimes();
+            updateSummary();
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('bookingModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentGym = null;
+            selectedDate = null;
+            selectedTime = null;
+        }
+
+        // Confirm Booking
+        function confirmBooking() {
+            const newBooking = {
+                id: Date.now(),
+                gymId: currentGym.id,
+                gymName: currentGym.name,
+                date: selectedDate,
+                time: selectedTime,
+                type: selectedSubscription.type === 'daily' ? 'يومي' : 'أسبوعي',
+                price: selectedSubscription.price,
+                status: 'confirmed',
+                qrCode: `GYMLINK-${Date.now()}-2026`
+            };
+
+            bookings.unshift(newBooking);
+            
+            // Show success animation
+            document.getElementById('bookingForm').style.display = 'none';
+            document.getElementById('successView').style.display = 'block';
+            
+            // Update bookings list
+            setTimeout(() => {
+                displayBookings();
+            }, 2000);
+        }
+
+        // Display Bookings
+        function displayBookings() {
+            const list = document.getElementById('bookingsList');
+            if (bookings.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><h3>لا توجد حجوزات</h3><p>ابدأ باستكشاف النوادي وحجز جلستك الأولى</p></div>';
+                return;
+            }
+
+            list.innerHTML = bookings.map(booking => {
+                const statusClass = booking.status === 'confirmed' ? 'status-confirmed' : 
+                                  booking.status === 'upcoming' ? 'status-upcoming' : 'status-past';
+                const statusText = booking.status === 'confirmed' ? 'مؤكد' :
+                                 booking.status === 'upcoming' ? 'قادم' : 'منتهي';
+
+                return `
+                    <div class="booking-card">
+                        <div class="booking-info">
+                            <h3>${booking.gymName}</h3>
+                            <div class="booking-details">
+                                <div class="booking-detail">
+                                    <span>📅 التاريخ:</span>
+                                    <span>${new Date(booking.date).toLocaleDateString('ar-SA')}</span>
+                                </div>
+                                <div class="booking-detail">
+                                    <span>⏰ الوقت:</span>
+                                    <span>${booking.time}</span>
+                                </div>
+                                <div class="booking-detail">
+                                    <span>📋 النوع:</span>
+                                    <span>${booking.type}</span>
+                                </div>
+                                <div class="booking-detail">
+                                    <span>💰 المبلغ:</span>
+                                    <span>${booking.price} ريال</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="booking-actions">
+                            <div class="status-badge ${statusClass}">${statusText}</div>
+                            <button class="qr-btn" onclick="showQRCode(${booking.id})">
+                                عرض QR Code
+                            </button>
+                            ${booking.status === 'confirmed' || booking.status === 'upcoming' ? 
+                                `<button class="cancel-btn" onclick="cancelBooking(${booking.id})">إلغاء الحجز</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show QR Code
+        function showQRCode(bookingId) {
+            const booking = bookings.find(b => b.id === bookingId);
+            document.getElementById('bookingNumber').textContent = booking.qrCode;
+            
+            // Generate QR Code using canvas
+            const canvas = document.getElementById('qrCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 230;
+            canvas.height = 230;
+            
+            // Simple QR code representation
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 230, 230);
+            ctx.fillStyle = '#fff';
+            
+            // Create a simple pattern
+            for(let i = 0; i < 10; i++) {
+                for(let j = 0; j < 10; j++) {
+                    if((i + j) % 2 === 0) {
+                        ctx.fillRect(i * 23, j * 23, 20, 20);
+                    }
+                }
+            }
+            
+            // Add booking ID in center
+            ctx.fillStyle = '#E63946';
+            ctx.fillRect(70, 70, 90, 90);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(booking.id.toString(), 115, 120);
+            
+            document.getElementById('qrModal').classList.add('active');
+        }
+
+        // Close QR Modal
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        // Cancel Booking
+        function cancelBooking(bookingId) {
+            if (confirm('هل أنت متأكد من إلغاء الحجز؟\n\nسياسة الإلغاء:\n• أكثر من 24 ساعة: استرجاع كامل\n• 12-24 ساعة: استرجاع 50%\n• أقل من 12 ساعة: لا استرجاع')) {
+                bookings = bookings.filter(b => b.id !== bookingId);
+                displayBookings();
+            }
+        }
+
+        // Show Tab
+        function showTab(tab) {
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+
+            // Show selected tab
+            document.getElementById(tab + '-tab').style.display = 'block';
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+    </script>
+</body>
+</html>
